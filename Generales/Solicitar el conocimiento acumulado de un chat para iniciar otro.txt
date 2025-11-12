@@ -1,0 +1,3 @@
+Prepárame un texto con la información importante que has aprendido en este chat, los lineamientos y ajustes que hemos trabajado. Quiero que el texto que generes permita al otro chat tener el conocimiento de las variables y la forma en que hemos venido trabajando.
+
+Podrías generarme un archivo (lo que sea más utilizable para tí) para que pueda copiar toda esa información y que lo pueda cargar más sencillo en el otro chat.
