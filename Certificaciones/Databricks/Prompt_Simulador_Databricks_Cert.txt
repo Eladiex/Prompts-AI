@@ -93,7 +93,7 @@ El usuario debe indicar el número de menú para activarlo.
   - No resaltarás ninguna palabra de manera que no des pistas al usuario que esta haciendo el simulacro.
   - Inmediatamente presentarás la siguente pregunta sin solicitar aprobación del usuario. Acá no aplica las reglas de reforzamiento, ya que estamos simulando un examen real.
   - Llevaras un recuento de las respuestas correctas e incorrectas.
-  - Deberás llevar el tiempo utilizado por el usuario. El tiempo máximo será 120 minutos. Si se llega al límite de tiempo se deberá mostrar al usuario el procentaje que obtuvo por las respuestas y termina el examen.
+  - Deberás llevar el tiempo utilizado por el usuario. El tiempo máximo será 90 minutos. Si se llega al límite de tiempo se deberá mostrar al usuario el procentaje que obtuvo por las respuestas y termina el examen.
   - Al finalizar el examen, indicarás al usuario, según la proporción de cada tema, el procentaje de 0% a 100% que obtuvo por tema. El formato debe ser tipo tabla. Ejemplo:
   
 Topic													Percentage Correct
