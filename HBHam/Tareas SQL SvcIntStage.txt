@@ -1,0 +1,377 @@
+# 📘 Reglas y Definiciones – Generación de Scripts SvcIntStage
+
+## 🧩 General
+Este documento resume las reglas definidas para la generación de tablas, stored procedures y scripts SQL basados en tablas *SvcIntStage*.
+
+---
+
+## 🔨 Tarea 1 – Creación de Tablas SvcIntStage
+
+### Reglas:
+- Todo comentario debe venir en Inglés
+- Nombre de la tabla: `<NombreTabla>SvcIntStage`
+- Campo Identity:
+  - Tipo: BIGINT IDENTITY(1,1)
+  - Nombre: `<NombreTabla>SvcIntStageID`
+- Campos obligatorios:
+  - `SvcIntRequestID VARCHAR(36) NOT NULL`
+  - `TrxActionID TINYINT NOT NULL`
+- Se incluyen todos los campos de la tabla original.
+- Se agrega PRIMARY KEY sobre el campo Identity.
+- Se crean índices en la tabla:
+
+CREATE NONCLUSTERED INDEX [IX_<NombreTabla>SvcIntStage] ON [dbo].[<NombreTabla>SvcIntStage]
+(
+	[SvcIntRequestID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[<NombreTabla>SvcIntStage] ADD  CONSTRAINT [PK_<NombreTabla>SvcIntStage] PRIMARY KEY CLUSTERED 
+(
+	[<NombreTabla>SvcIntStageID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+
+**Dejar el índice en ese formato, ya que reduce campo a nivel del archivo donde se respaldan.**
+
+---
+
+## 🧩 Tarea 2 – Stored Procedures
+
+### Tipos:
+- Insert
+- Update
+- Delete
+- Select
+
+### Reglas generales:
+- Todo comentario debe venir en Inglés
+- Nombre:
+  - `spSvcInt_<NombreTabla>SvcIntStage<Acción>`
+  - Ejemplo: `spSvcInt_RefundsNVoidsSvcIntStageSelect`
+- Parámetros adicionales obligatorios (excepto en Select):
+  ```
+  @MQOriginatingLocationID INT = 5001,
+  @MQOriginatingComputerID INT = 0,
+  @MQTrxDate DATETIME = NULL
+  ```
+- No duplicar parámetros si ya existen.
+- No incluir estos parámetros en SELECT.
+- No usar `RETURN 0`.
+- `SET NOCOUNT ON` obligatorio.
+- Para SP con acción Insert:
+  - Obtener consecutivo siguiente sólo si el valor de @<NombreTabla>ID viene vacío:
+	If @<NombreTabla>ID is Null or @<NombreTabla>ID = 0
+	Begin
+			--Get @<NombreTabla>ID from Counter table
+			Update Counter<NombreTabla> set Counter = Counter + 1, @<NombreTabla>ID = Counter where KeyFld = 1
+	End
+
+  - Usar valor de consecutivo en @<NombreTabla>ID
+  
+-- Ejemplo de estructura a utilizar
+
+´´´
+CREATE PROCEDURE [dbo].[spSvcInt_OrderDetailSvcIntStageInsert]
+	@TrxActionID tinyint NULL,
+	@SvcIntRequestID varchar(36) NULL,
+
+	@DataEntryEmployeeID Decimal (18,9) = Null,
+	@OrderDetailID Decimal (18,9) = NULL, 
+	@OrderDetailSeq Int = Null, 
+	@OrdersID Decimal (18,9) = Null, 
+	@OrderShipToID Decimal (18,9) = Null, 
+	@SaleType Varchar (5) = Null, 
+	@LocationTypeID Int = Null, 
+	@SKU int = Null,
+	@Quantity Int = Null, 
+	@UnitPrice Money = Null, 
+	@Discount Money = Null, 
+	@ExtPrice Money = Null, 
+	@Tax Money = Null, 
+	@StandardFreight Money = Null, 
+	@RushFreight Money = Null, 
+	@GCFreight Money = 0, 
+	@DeliveryDate Datetime = Null, 
+	@VendorShipDate Datetime = Null,
+	@ShipDate Datetime = Null, 
+	@ServiceIndicatorID int = Null,
+	@LocationID Int = Null, 
+	@OrderDetailStatusID Int = Null, 
+	@Enclosure Smallint = Null,
+	@Batch Int = Null, 
+	@PrintedDate Datetime = Null, 
+	@RePrintedDate Datetime = Null, 
+	@UPSZone Smallint = Null,
+	@PackageCnt Smallint = Null, 
+	@TotalShipping Money = Null, 
+	@InvAdjusted Smallint = 0, 
+	@LineDiscountPercent Money = 0,
+	@LineDiscountTypeID Int = Null,
+	@GCStartNumber Varchar (12) = Null,
+	@GCEndNumber Varchar (12) = Null,
+	@Attributes Varchar(200) = Null, 
+	@Timestamp Datetime = Null,
+	@MQOriginatingLocationID Int = 5001,
+	@MQOriginatingComputerID Int = 0,
+	@MQTrxDate Datetime = Null
+AS
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @Process varchar(500), @ErrMsg varchar(5000), @Status varchar(25)='success', @CurrentDate datetime = GetDate(),
+		@Inserted smallint = 0
+
+	Begin Try
+			If @OrderDetailID is Null or @OrderDetailID = 0
+			Begin
+				--Get OrderDetailID from Counter table
+				Update CounterOrderDetail set Counter = Counter + 1, @OrderDetailID = Counter where KeyFld = 1
+			End
+
+		--Insert new record
+		Insert into OrderDetailSvcIntStage (TrxActionID, SvcIntRequestID, OrderDetailID, OrderDetailSeq, OrdersID, OrderShipToID, SaleType, LocationTypeID, SKU, Quantity, UnitPrice, Discount, ExtPrice, Tax, StandardFreight, RushFreight, GCFreight, DeliveryDate, VendorShipDate, ShipDate, ServiceIndicatorID, LocationID, OrderDetailStatusID, Enclosure, Batch, PrintedDate, RePrintedDate, UPSZone, PackageCnt, TotalShipping, InvAdjusted, LineDiscountPercent, LineDiscountTypeID, GCStartNumber, GCEndNumber, Attributes, Timestamp) 
+			values (@TrxActionID, @SvcIntRequestID, @OrderDetailID, @OrderDetailSeq, @OrdersID, @OrderShipToID, @SaleType, @LocationTypeID, @SKU, @Quantity, @UnitPrice, @Discount, @ExtPrice, @Tax, @StandardFreight, @RushFreight, @GCFreight, @DeliveryDate, @VendorShipDate, @ShipDate, @ServiceIndicatorID, @LocationID, @OrderDetailStatusID, @Enclosure, @Batch, @PrintedDate, @RePrintedDate, @UPSZone, @PackageCnt, @TotalShipping, @InvAdjusted, @LineDiscountPercent, @LineDiscountTypeID, @GCStartNumber, @GCEndNumber, @Attributes, @TimeStamp) 
+
+		Set @Inserted = -1
+
+		--Create OrderLog record
+		--handling in Service
+		--exec sp_OrderLogInsert @TableName = 'OrderDetail', @TableID = @OrderDetailID, @EmployeeID = @DataEntryEmployeeID, @TrxTypeID = 'I', @TrxDateTime = @CurrentDate
+
+		Select @Status AS [status], * From OrderDetailSvcIntStage Where OrderDetailID = @OrderDetailID
+	End Try
+
+	Begin Catch
+		If @Inserted = -1
+			Begin
+				Select @Status AS [Status], @OrderDetailID as OrderDetailID
+			End
+		Else
+			Begin
+				SET @Process = ERROR_PROCEDURE() + ' @ Line=' + CONVERT(VARCHAR, ERROR_LINE())
+				SET @ErrMsg = 'spSvcInt [' + CONVERT(VARCHAR, ERROR_NUMBER()) + '] ' + ERROR_MESSAGE() + '  : OrdersID: ' + convert(varchar, @OrdersID)
+
+				EXEC spInterfaceErrorINSRT @Process,@ErrMsg,-1 -- Always log and send email
+				SET @Status='Failed'
+
+				Select @Status AS [Status], -911 as OrderDetailID
+
+				-- Most of the time you're done.
+				Set @ErrMsg = @Process +  ':' + @ErrMsg
+				;Throw 90911, @ErrMsg, 1;
+			End
+
+	End Catch
+
+END
+´´´
+
+---
+
+## 🔄 Tarea 3 – Scripts de Migración
+
+### Objetivo:
+Mover datos desde tablas `SvcIntStage` hacia tablas principales.
+
+
+### Reglas generales:
+- Todo comentario debe venir en Inglés
+- Nombre:
+  - `spSvcInt_<Nombre Tabla>StageToCMS`
+  - Ejemplo: `spSvcInt_OrderAttributeStageToCMS`
+- Se debe generar las instrucciones dentro de un SP
+- Estructura del SP
+```
+	CREATE PROCEDURE [dbo].[spSvcInt_OrderAttributeStageToCMS]
+	(
+		@SvcIntRequestID VARCHAR(36)
+	)
+	AS
+	BEGIN
+		SET NOCOUNT ON;
+```
+
+---
+
+### 📥 INSERT
+- Fuente: `SvcIntStage`
+- Filtro:
+  ```
+  TrxActionID = 1
+  AND SvcIntRequestID = @SvcIntRequestID
+  ```
+- Columnas deben ser explícitas (NO `SELECT *`)
+
+---
+
+### 🔁 UPDATE
+- Fuente: `SvcIntStage`
+- Filtro:
+  ```
+  TrxActionID = 2
+  AND SvcIntRequestID = @SvcIntRequestID
+  ```
+- Uso obligatorio de CTE:
+  ```
+  WITH TablaCTE AS (...)
+  ```
+- Join por ID principal.
+- Columnas explícitas en SELECT.
+
+---
+
+### ❌ DELETE
+- Fuente: `SvcIntStage`
+- Filtro:
+  ```
+  TrxActionID = 3
+  AND SvcIntRequestID = @SvcIntRequestID
+  ```
+- Eliminación basada en IDs.
+
+---
+
+## 📌 Convenciones Importantes
+
+- ❗ Nunca usar `SELECT *`
+- ✔ Siempre listar columnas explícitamente
+- ✔ Usar alias (`S`, `T`, etc.)
+- ✔ Usar `WITH (NOLOCK)` en lecturas
+- ✔ Mantener consistencia en nombres
+- ✔ Respetar estructura de plantillas
+
+- Agregar comentario a la creación de Store Procedures siguiendo esta estructura:
+-- =============================================
+-- Author: Eladio Valverde
+-- Create date: <Fecha Actual. Formato: dd/mm/yyyy>
+-- Description:	<descripción de la acción del SP en inglés. Ejemplo: To insert into the staging table for Refunds and Voids>
+--
+-- Last modified (newer first): 
+-- dd/mm/yyyy Initials: Razon 
+--    
+-- =============================================
+
+
+## 🔄 Tarea 4 – Scripts de Insersion tablas Produccion
+
+### Reglas generales:
+- Todo comentario debe venir en Inglés
+- Nombre:
+  - `spSvcInt_<NombreTabla>Insert`
+  - Ejemplo: `spSvcInt_RefundsNVoidsInsert`
+- Parámetros adicionales obligatorios (excepto en Select):
+  ```
+  @MQOriginatingLocationID INT = 5001,
+  @MQOriginatingComputerID INT = 0,
+  @MQTrxDate DATETIME = NULL
+  ```
+- No duplicar parámetros si ya existen.
+- No usar `RETURN 0`.
+- `SET NOCOUNT ON` obligatorio.
+- Para SP con acción Insert:
+  - Obtener consecutivo siguiente sólo si el valor de @<NombreTabla>ID viene vacío:
+	If @<NombreTabla>ID is Null or @<NombreTabla>ID = 0
+	Begin
+			--Get @<NombreTabla>ID from Counter table
+			Update Counter<NombreTabla> set Counter = Counter + 1, @<NombreTabla>ID = Counter where KeyFld = 1
+	End
+
+  - Usar valor de consecutivo en @<NombreTabla>ID
+
+
+- Ejemplo de la estructura a utilizar:
+```
+	@DataEntryEmployeeID int = 0,
+	@OrderPaymentID Decimal (18,9) = 0, 
+	@OrderPaymentSeq Int = 0, 
+	@OrdersID Decimal (18,9) = 0, 
+	@PaymentMethodID Int = 0, 
+	@PaymentInfo1 Varchar (25) = Null, 
+	@PaymentInfo2 Varchar (25) = Null, 
+	@PaymentInfo3 Varchar (100) = Null, 
+	@PaymentAmount Money = 0, 
+	@PaymentStatusID Int = 0, 
+	@PaymentCompletionDate Datetime = Null, 
+	@ExternalStatusID Int = 0, 
+	@TransactionTag Int = 0, 
+	@Attributes Varchar (200) = Null, 
+	@PaymentInfo4 Varchar (255) = Null, 
+	@PaymentInfo5 Varchar (255) = Null, 
+	@TimeStamp Datetime = Null, 
+	@SerialNumber varchar(50) = NULL,
+	@CardPresent smallint = NULL,
+	@ManualEntry smallint = NULL,
+	@PaymentETB varchar(350) = NULL,
+	@MQOriginatingLocationID Int = 5001,
+	@MQOriginatingComputerID Int = 0,
+	@MQTrxDate Datetime = Null
+AS
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @Process varchar(500), @ErrMsg varchar(5000), @Status varchar(25)='success'
+
+	Begin Try
+		--Get OrderPaymentID from Counter table
+		IF @OrderPaymentID IS NULL OR @OrderPaymentID = 0
+		BEGIN
+			UPDATE CounterOrderPayment
+			SET Counter = Counter + 1,
+				@OrderPaymentID = Counter
+			WHERE KeyFld = 1;
+		END
+		
+		--Insert record
+		Insert into OrderPayment (OrderPaymentID, OrderPaymentSeq, OrdersID, PaymentMethodID, PaymentInfo1, PaymentInfo2, PaymentInfo3, PaymentAmount, PaymentStatusID, PaymentCompletionDate, ExternalStatusID, TransactionTag, Attributes, PaymentInfo4, PaymentInfo5, TimeStamp, SerialNumber, CardPresent, ManualEntry, PaymentETB) 
+				values (@OrderPaymentID, @OrderPaymentSeq, @OrdersID, @PaymentMethodID, @PaymentInfo1, @PaymentInfo2, @PaymentInfo3, @PaymentAmount, @PaymentStatusID, @PaymentCompletionDate, @ExternalStatusID, @TransactionTag, @Attributes, @PaymentInfo4, @PaymentInfo5, @TimeStamp, @SerialNumber, @CardPresent, @ManualEntry, @PaymentETB) 
+
+		--Create OrderLog record
+		--handling in Service
+		--exec dbo.sp_OrderLogInsert @TableName = 'OrderPayment', @TableID = @OrderPaymentID, @EmployeeID = @DataEntryEmployeeID, @TrxTypeID = 'I'
+
+		Select @Status AS [status], @OrderPaymentID as orderPaymentID 
+	End Try
+
+	Begin Catch
+			SET @Process = ERROR_PROCEDURE() + ' @ Line=' + CONVERT(VARCHAR, ERROR_LINE())
+			SET @ErrMsg = 'spSvcInt [' + CONVERT(VARCHAR, ERROR_NUMBER()) + '] ' + ERROR_MESSAGE() + '  : OrdersID: ' + convert(varchar, @OrdersID)
+
+			EXEC spInterfaceErrorINSRT @Process,@ErrMsg,-1 -- Always log and send email
+			SET @Status='Failed';
+
+			-- Most of the time you're done.
+			Set @ErrMsg = @Process +  ':' + @ErrMsg
+			;Throw 90911, @ErrMsg, 1;
+
+	End Catch
+
+END
+```
+---
+
+## 📋 Menú de Tareas
+
+1. **Tarea 1**
+   - Crear tabla SvcIntStage
+
+2. **Tarea 2**
+   - Generar Stored Procedures
+
+3. **Tarea 3**
+   - Generar INSERT / UPDATE / DELETE
+
+4. **Tarea 4**
+   - Generar Stored Procedure Insert Produccion
+---
+
+## 🚀 Ejemplo de uso
+
+```
+Ejecutar Tarea1 con la tabla Orders
+Ejecutar Tarea2 para la tabla Orders
+Ejecutar Tarea3 para la tabla Orders
+Ejecutar Tarea4 para la tabla Orders
+```
+
+---
+
+**Fin del documento**
