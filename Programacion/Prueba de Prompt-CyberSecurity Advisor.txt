@@ -1,0 +1,19 @@
+CWE-601. En general tengo código que dentro de un método define una variable local llamada redirect. Luego a lo largo del método asigna valores a esa variable y termina haciendo un  Response.Redirect(redirect). En ese punto es que se indica la Falla CWE-601. Te pongo un esqueleto del código del método si ocupas ver el método completo indícamlo para subirlo.
+
+protected void btnSubmit_Click(object sender, EventArgs e)
+{
+	string redirect = "";
+	
+	Ok = EjecutaProceso();
+	
+	if (Ok)
+	{
+	  redirect = "~/PaymentConfirmation.aspx?CID=0&GUID=" + GUID + "&UID=" + UID;
+	}
+	else
+	{
+	  redirect = "~/PaymentError.aspx?EID=0&GUID=" + GUID + "&UID=" + UID;
+	}
+	
+    Response.Redirect(redirect);
+}

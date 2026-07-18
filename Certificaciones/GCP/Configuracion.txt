@@ -1,0 +1,5 @@
+Nombre:GCP Certification Trainning
+Descripcion: A GCP certification trainning chat where you can practice or learn related to a certification
+Starters:
+ - Let's start a new certification
+ - Let's work on a specific topic related to certification

@@ -1,0 +1,148 @@
+# 📘 Reglas y Definiciones – Generación de Scripts InBoxStage
+
+## 🧩 General
+Este documento resume las reglas definidas para la generación de tablas, stored procedures y scripts SQL basados en tablas *InBoxStage*.
+
+---
+
+## 🔨 Tarea 1 – Creación de Tablas InBoxStage
+
+### Reglas:
+- Todo comentario debe venir en Inglés
+- Nombre de la tabla: `<NombreTabla>InBoxStage`
+- Campo Identity:
+  - Tipo: BIGINT IDENTITY(1,1)
+  - Nombre: `<NombreTabla>InBoxStageID`
+- Campos obligatorios:
+  - `InBoxID DECIMAL(13,0) NOT NULL`
+  - `TrxActionID TINYINT NOT NULL`
+- Se incluyen todos los campos de la tabla original.
+- Se agrega PRIMARY KEY sobre el campo Identity.
+- Se crean índices en la tabla:
+
+CREATE UNIQUE NONCLUSTERED INDEX [IX_<NombreTabla>InBoxStage] ON [dbo].[<NombreTabla>InBoxStage]
+(
+	[InBoxID] ASC,
+	[<NombreTabla>ID] ASC,
+	[TrxActionID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+
+CREATE TABLE [dbo].[<NombreTabla>InBoxStage] ADD  CONSTRAINT [PK_<NombreTabla>InBoxStage] PRIMARY KEY CLUSTERED 
+(
+	[<NombreTabla>InBoxStageID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+
+**Dejar el índice en ese formato, ya que reduce campo a nivel del archivo donde se respaldan.**
+
+---
+
+## 🧩 Tarea 2 – Stored Procedures
+
+### Tipos:
+- Insert
+- Update
+- Delete
+- Select
+
+### Reglas generales:
+- Todo comentario debe venir en Inglés
+- Nombre:
+  - `sp<NombreTabla>InBoxStage<Acción>`
+  - Ejemplo: `spRefundsNVoidsInBoxStageSelect`
+- Parámetros adicionales obligatorios (excepto en Select):
+  ```
+  @MQOriginatingLocationID INT = 5001,
+  @MQOriginatingComputerID INT = 0,
+  @MQTrxDate DATETIME = NULL
+  ```
+- No duplicar parámetros si ya existen.
+- No incluir estos parámetros en SELECT.
+- No usar `RETURN 0`.
+- `SET NOCOUNT ON` obligatorio.
+
+---
+
+## 🔄 Tarea 3 – Scripts de Migración
+
+### Objetivo:
+Mover datos desde tablas `InBoxStage` hacia tablas principales.
+
+### Reglas generales:
+- Todo comentario debe venir en Inglés
+
+---
+
+### 📥 INSERT
+- Fuente: `InBoxStage`
+- Filtro:
+  ```
+  TrxActionID = 1
+  AND InBoxID = @InBoxID
+  ```
+- Columnas deben ser explícitas (NO `SELECT *`)
+
+---
+
+### 🔁 UPDATE
+- Fuente: `InBoxStage`
+- Filtro:
+  ```
+  TrxActionID = 2
+  AND InBoxID = @InBoxID
+  ```
+- Uso obligatorio de CTE:
+  ```
+  WITH TablaCTE AS (...)
+  ```
+- Join por ID principal.
+- Columnas explícitas en SELECT.
+
+---
+
+### ❌ DELETE
+- Fuente: `InBoxStage`
+- Filtro:
+  ```
+  TrxActionID = 3
+  AND InBoxID = @InBoxID
+  ```
+- Eliminación basada en IDs.
+
+---
+
+## 📌 Convenciones Importantes
+
+- ❗ Nunca usar `SELECT *`
+- ✔ Siempre listar columnas explícitamente
+- ✔ Usar alias (`S`, `T`, etc.)
+- ✔ Usar `WITH (NOLOCK)` en lecturas
+- ✔ Mantener consistencia en nombres
+- ✔ Respetar estructura de plantillas
+
+---
+
+## 📋 Menú de Tareas
+
+1. **Tarea 1**
+   - Crear tabla InBoxStage
+
+2. **Tarea 2**
+   - Generar Stored Procedures
+
+3. **Tarea 3**
+   - Generar INSERT / UPDATE / DELETE
+
+---
+
+## 🚀 Ejemplo de uso
+
+```
+Ejecutar Tarea1 con la tabla Orders
+Ejecutar Tarea2 para la tabla Orders
+Ejecutar Tarea3 para la tabla Orders
+```
+
+---
+
+**Fin del documento**

@@ -1,0 +1,4 @@
+Nombre: Cursor Teacher
+Descripcion:A tool to learn cursor
+Starters:
+ - Let' start our Cursor course
