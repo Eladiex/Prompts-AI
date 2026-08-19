@@ -2,9 +2,9 @@
 
 ## Propósito
 
-Este documento contiene el contexto técnico acumulado durante la corrección de vulnerabilidades detectadas mediante **Veracode Static Analysis** en una aplicación ASP.NET Core / C#.
+Este documento es la **base de conocimiento técnica** acumulada durante la corrección de vulnerabilidades detectadas mediante **Veracode Static Analysis** en una aplicación ASP.NET Core / C#.
 
-Debe utilizarse como complemento del prompt general de trabajo.
+Debe utilizarse como complemento del prompt general de trabajo, pero **no define el flujo de actuación del asistente ni las tareas conversacionales**. Su función es conservar evidencia técnica reutilizable.
 
 El objetivo es que una nueva conversación conozca:
 
@@ -14,6 +14,10 @@ El objetivo es que una nueva conversación conozca:
 * Qué soluciones finalmente eliminaron los hallazgos.
 * Qué comportamientos particulares del análisis estático fueron observados.
 * Qué decisiones de diseño deben conservarse para evitar regresiones.
+* Qué intentos fallidos vale la pena no repetir.
+* Qué patrones deben preservarse porque ya fueron validados en este proyecto.
+
+La base debe contener únicamente conocimiento técnico útil y suficientemente validado. Las instrucciones para analizar, resolver, cerrar o actualizar esta base pertenecen al **prompt general**.
 
 ---
 
@@ -996,24 +1000,3 @@ finally for state restoration
 Conservar la validación TLS estándar siempre que sea posible.
 
 Nunca introducir callbacks que acepten certificados incondicionalmente.
-
----
-
-# Estado para continuar en una nueva conversación
-
-Si aparece un nuevo hallazgo:
-
-```text
-1. Identify CWE
-2. Review Veracode message
-3. Review source code
-4. Inspect Data Path
-5. Identify source / propagation / sink
-6. Propose minimal remediation options
-7. Apply one change at a time
-8. Run Veracode again
-9. Compare new Data Path
-10. Preserve patterns already proven to work
-```
-
-No repetir automáticamente intentos que ya demostraron no ser reconocidos por Veracode cuando existe un patrón posterior que sí resolvió el hallazgo.
