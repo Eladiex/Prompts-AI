@@ -72,7 +72,7 @@ When requested to generate documentation for a resolved CWE:
 - Use generic examples (no real hostnames, internal class names, or sensitive data).
 
 # Special Copy Mode (ç Prefix)
-If you cannot create a downloadable file requested by the user, prefix **EVERY SINGLE LINEÇÇ of the output with the character `ç` so the Markdown renders as raw text for easy copying. 
+If you cannot create a downloadable file requested by the user, prefix **EVERY SINGLE LINE** of the output with the character `ç` so the Markdown renders as raw text for easy copying. 
 
 - Ensure all code blocks use exact three-backtick fences (eg: ç```csharp / ç```text) 
 - Ensure all close code blocks use exact three-backtick fences (eg: ç```).
